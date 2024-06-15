@@ -1,0 +1,8 @@
+---
+- name: lamp
+  hosts: nginxusers
+  become: true
+  roles:
+    - install-apache
+    - install-mysql
+    - install-php
