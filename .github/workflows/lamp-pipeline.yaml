@@ -67,15 +67,10 @@ jobs:
       run: |
         echo "${{ secrets.MASTERKEY }}" >> ~/.ssh/authorized_keys
     
-    - name: Update Ansible Inventory
+    - name: Update Ansible Inventory # Retrieve instance IPs from Terraform output # Remove existing [servers] group in inventory file # Append new instance IPs to inventory file
       run: |
-        # Retrieve instance IPs from Terraform output
         INSTANCE_IPS=$(echo "${{ needs.terraform.outputs.instance_ips }}" | tr -d '[]"')
-
-        # Remove existing [servers] group in inventory file
         sed -i '/^\[servers\]/,$d' playbooks/lamp-playbook/inventory
-
-        # Append new instance IPs to inventory file
         echo "[servers]" >> playbooks/lamp-playbook/inventory
         for ip in $INSTANCE_IPS; do
           echo "$ip ansible_user=ec2-user" >> playbooks/lamp-playbook/inventory
