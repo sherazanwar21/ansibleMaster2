@@ -1,0 +1,87 @@
+name: lamp pipeline
+
+on:
+#   push:
+#     branches:
+#       - dev
+#   pull_request:
+#     branches:
+#       - dev
+  workflow_dispatch:
+
+jobs:
+  lamp-jobs:
+    runs-on: centos-7
+
+    steps:
+    - name: clone-codebase
+      uses: actions/checkout@v2
+    
+    - name: Install Terraform
+      uses: hashicorp/setup-terraform@v3.1.1
+      with:
+        terraform_version: 1.1.0
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWSACCESSKEY }}
+        aws-secret-access-key: ${{ secrets.AWSSECRETACCESSKEY }}
+        aws-region: us-east-2
+
+    - name: Terraform init
+      id: init
+      working-directory: terraform
+      run: terraform init
+
+    - name: Terraform fmt
+      id: fmt
+      working-directory: terraform
+      run: terraform fmt
+
+    - name: Terraform validate
+      id: validate
+      working-directory: terraform
+      run: terraform validate
+
+    - name: Terraform plan
+      id: plan
+      working-directory: terraform
+      run: terraform plan
+
+    - name: Terraform apply
+      id: apply
+      working-directory: terraform
+      run: terraform apply -auto-approve
+
+    - name: Get Instance IPs
+      id: instance_ips
+      run: echo "::set-output name=ips::$(terraform output -json instance_public_ips)"
+    
+    #ansible
+    - name: install ansible
+      run: |
+        sudo yum install ansible* -y
+
+    - name: copy keys to machines
+      run: |
+        echo "${{ secrets.MASTERKEY }}" >> ~/.ssh/authorized_keys
+    
+    - name: Update Ansible Inventory
+      run: |
+        # Retrieve instance IPs from Terraform output
+        INSTANCE_IPS=$(echo "${{ needs.terraform.outputs.instance_ips }}" | tr -d '[]"')
+
+        # Remove existing [servers] group in inventory file
+        sed -i '/^\[servers\]/,$d' playbooks/lamp-playbook/inventory
+
+        # Append new instance IPs to inventory file
+        echo "[servers]" >> playbooks/lamp-playbook/inventory
+        for ip in $INSTANCE_IPS; do
+          echo "$ip ansible_user=ec2-user" >> playbooks/lamp-playbook/inventory
+        done
+    
+    - name: run ansible playbook
+      working-directory: playbooks/lamp-playbook
+      run: |
+        ansible-playbook -i invenory dynamic_lamp.yaml
