@@ -11,7 +11,7 @@ on:
 
 jobs:
   lamp-jobs:
-    runs-on: centos-7
+    runs-on: centos-latest
 
     steps:
     - name: clone-codebase
