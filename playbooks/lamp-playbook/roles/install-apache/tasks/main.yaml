@@ -1,7 +1,0 @@
----
-- name: apache
-  yum:
-    name: httpd
-    state: latest
-  notify: Start Apache
-  

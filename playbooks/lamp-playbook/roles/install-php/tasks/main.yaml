@@ -1,5 +1,0 @@
----
-- name: php
-  yum:
-    name: php
-    state: present

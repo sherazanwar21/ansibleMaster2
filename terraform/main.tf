@@ -3,12 +3,13 @@ data "aws_security_group" "allow_httpd-ssh" {
 }
 resource "aws_instance" "pipeline-clients" {
     ami = "ami-033fabdd332044f06"
-    instance_type = "t2.micro"
-    security_groups = [ data.aws_security_group.allow_httpd-ssh ]
+    instance_type = "t2.medium"
+    security_groups = [ data.aws_security_group.allow_httpd-ssh.id ]
     count = 2
+    
 }
 
-output "instances_ip" {
-    value = aws_instance.pipeline-clients[*].public.ip
+# output "instances_ip" {
+#     value = aws_instance.pipeline-clients[*].public.ip
   
-}
+# }
